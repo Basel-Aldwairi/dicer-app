@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import json
 from pathlib import Path
+from configs import *
 
 current_dir = Path(__file__).parent if "__file__" in locals() else Path.cwd()
 
@@ -27,6 +28,8 @@ empty_data = {
 }
 
 
+
+
 def get_data():
 
     try:
@@ -41,76 +44,89 @@ def get_data():
 
 
 
-
-
-
 if 'data' not in st.session_state:
     st.session_state['data'] = []
+if 'col_count' not in st.session_state:
+    st.session_state['col_count'] = 3
+if 'dice_rolls' not in st.session_state:
+    st.session_state['dice_rolls'] = 12
+if 'min_roll' not in st.session_state:
+    st.session_state['min_roll'] = 2
 
 
 st.title("Dicer-App")
 
 
-cs = st.columns(2)
-
-with cs[0]:
-    if st.button("Get data"):
-        st.session_state['data'] = get_data()
-
-with cs[1]:
-    if st.button('save_data'):
-        json.dump(st.session_state['data'], open(data_file, 'w'))
 
 
 
+with st.sidebar:
+    st.subheader('Dice Configs')
 
 
-c1, c2, c3 = st.columns(3)
+    st.session_state['col_count'] = st.slider('Column Count', min_value=1, max_value=4, value=3)
 
-with c1:
-    if st.button("2"):
-        st.session_state['data'].append(2)
+    used_dice = st.selectbox('Game Dice', options=list(dice_dict.keys()))
 
-
-    if st.button("3"):
-        st.session_state['data'].append(3)
-
-    if st.button("4"):
-        st.session_state['data'].append(4)
-
-
-    if st.button("5"):
-        st.session_state['data'].append(5)
-
-with c2:
-    if st.button("6"):
-        st.session_state['data'].append(6)
-
-    if st.button("7"):
-        st.session_state['data'].append(7)
-
-    if st.button("8"):
-        st.session_state['data'].append(8)
-
-    if st.button("<"):
-        if len(st.session_state['data']) > 0:
-            last_data = st.session_state['data'].pop()
+    if used_dice == 'Custom':
+        rolls_values = st.slider('Possible Rolls', min_value=1, max_value=20,
+                                 value=dice_dict['Custom'])
+        st.session_state['min_roll'] = rolls_values[0]
+        st.session_state['dice_rolls'] = rolls_values[1]
+        dice_dict['Custom'] = (rolls_values[0], rolls_values[1])
+    else:
+        st.session_state['min_roll'] = dice_dict[used_dice][0]
+        st.session_state['dice_rolls'] = dice_dict[used_dice][1]
 
 
-with c3:
+    st.divider()
 
-    if st.button("9"):
-        st.session_state['data'].append(9)
 
-    if st.button("10"):
-        st.session_state['data'].append(10)
 
-    if st.button("11"):
-        st.session_state['data'].append(11)
 
-    if st.button("12"):
-        st.session_state['data'].append(12)
 
+    cs = st.columns(2)
+
+    with cs[0]:
+        if st.button("Get data", use_container_width=True):
+            st.session_state['data'] = get_data()
+
+    with cs[1]:
+        if st.button('save_data', use_container_width=True):
+            json.dump(st.session_state['data'], open(data_file, 'w'))
+
+
+
+st.divider()
+
+
+col_count = st.session_state['col_count']
+dice_rolls = st.session_state['dice_rolls']
+min_roll = st.session_state['min_roll']
+
+roll_cols = st.columns(col_count)
+
+element_count = dice_rolls - min_roll + 2
+
+roll = min_roll
+delete_location = dice_rolls - min_roll if col_count == 3 and element_count % col_count == 0 else element_count - 1
+
+for i in range(element_count):
+    col = i % col_count
+
+    with roll_cols[col]:
+        if i == delete_location:
+            if  st.button("<", use_container_width=True) and len(st.session_state['data']) > 0:
+                last_data = st.session_state['data'].pop()
+
+        else:
+            if st.button(str(roll), use_container_width=True, key=str(i)):
+                st.session_state['data'].append(roll)
+            roll += 1
+
+
+
+st.divider()
 
 
 if len(st.session_state['data']) > 0:
@@ -121,8 +137,23 @@ if len(st.session_state['data']) > 0:
     ax.set_ylabel("Rolls")
 
 
-    ax.hist(st.session_state['data'])
+    counts, bins, patches = ax.hist(
+        st.session_state['data'],
+        bins=range(st.session_state['min_roll'], st.session_state['dice_rolls']+2),
+        align='left',
+        edgecolor='black'
+    )
 
+    colors = [
+        'red', 'orangered', 'darkorange', 'orange', 'gold',
+        'yellowgreen', 'mediumseagreen', 'dodgerblue', 'mediumpurple',
+        'orchid', 'hotpink'
+    ]
+
+    for i, patch in enumerate(patches):
+        patch.set_facecolor(colors[i % len(colors)])
+
+    ax.set_xticks(range(st.session_state['min_roll'], st.session_state['dice_rolls']+1))
 
     st.pyplot(fig)
 
