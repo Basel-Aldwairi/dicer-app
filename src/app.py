@@ -1,9 +1,9 @@
 import streamlit as st
 from matplotlib import pyplot as plt
-import numpy as np
 import json
 from pathlib import Path
 from configs import *
+from games_db import load_db
 
 current_dir = Path(__file__).parent if "__file__" in locals() else Path.cwd()
 
@@ -11,23 +11,6 @@ data_file = current_dir.parent / 'data' / 'data.json'
 
 
 st.set_page_config(page_title='Dicer-App', layout="centered")
-
-
-empty_data = {
-    2 : 0,
-    3 : 0,
-    4 : 0,
-    5 : 0,
-    6 : 0,
-    7 : 0,
-    8 : 0,
-    9 : 0,
-    10 : 0,
-    11 : 0,
-    12 : 0,
-}
-
-
 
 
 def get_data():
@@ -54,10 +37,9 @@ if 'min_roll' not in st.session_state:
     st.session_state['min_roll'] = 2
 
 
+db = load_db()
+
 st.title("Dicer-App")
-
-
-
 
 
 with st.sidebar:
@@ -80,9 +62,6 @@ with st.sidebar:
 
 
     st.divider()
-
-
-
 
 
     cs = st.columns(2)
