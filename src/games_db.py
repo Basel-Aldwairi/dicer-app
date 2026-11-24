@@ -1,5 +1,7 @@
 import sqlite3
 import streamlit as st
+from pyparsing import results
+
 import sql_queries
 import pathlib
 
@@ -47,7 +49,8 @@ class Database:
         dice = ['1D6',
                 '2D6',
                 'D20',
-                'No Dice']
+                'No Dice',
+                'D4']
 
         for die in dice:
             self.insert_dice(die)
@@ -333,6 +336,10 @@ class Database:
     def select_view_game_dice(self):
         results = self.execute(sql_queries.SELECT_GAME_DICE)
         return results
+
+    def select_game_die(self, game_name):
+        results = self.execute(sql_queries.SELECT_GAME_DIE, (game_name, ))
+        return results[0][0]
 
     def drop_view_game_dice(self):
         self.execute(sql_queries.DROP_VIEW_GAME_DICE)

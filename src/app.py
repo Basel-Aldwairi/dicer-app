@@ -11,7 +11,7 @@ db = load_db()
 if 'game_started' not in st.session_state:
     st.session_state['game_started'] = False
 if 'selected_game' not in st.session_state:
-    st.session_state['selected_game'] = None
+    st.session_state['selected_game'] = 'Catan'
 if 'selected_players' not in st.session_state:
     st.session_state['selected_players'] = None
 if 'round_id' not in st.session_state:
@@ -37,8 +37,8 @@ st.divider()
 players_list = [player[0] for player in db.select_players()]
 games_list = [game[1] for game in db.select_games()]
 
-selected_game = st.selectbox("Select Game", games_list)
-selected_players = st.multiselect("Select Players", players_list)
+selected_game = st.selectbox("Select Game", games_list, index=games_list.index(st.session_state['selected_game']))
+selected_players = st.multiselect("Select Players", players_list, default=st.session_state['selected_players'] )
 
 new_game_btn = st.button("New Game")
 
@@ -70,7 +70,6 @@ if st.session_state['game_started']:
 
         st.session_state['game_started'] = False
         st.session_state['round_id'] = None
-        st.session_state['selected_game'] = None
         st.session_state['selected_players'] = None
 
         st.session_state['game_finished'] = True
@@ -78,6 +77,3 @@ if st.session_state['game_started']:
 
 if st.session_state['game_finished']:
     st.success(f'Updated Winner of game "{st.session_state['last_game']}" with {st.session_state["last_winner"]}')
-
-
-st.text(db.select_view_all_rounds_winners())
