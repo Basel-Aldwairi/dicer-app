@@ -22,6 +22,8 @@ if 'used_dice' not in st.session_state:
     st.session_state['used_dice'] = '1D6'
 if 'has_dice' not in st.session_state:
     st.session_state['has_dice'] = False
+if 'game_started' not in st.session_state:
+    st.session_state['game_started'] = False
 
 
 db = load_db()
@@ -125,3 +127,32 @@ if st.session_state['has_dice']:
 
 else:
     st.subheader(f'"{st.session_state['selected_game']}" has no Dice')
+
+
+
+import streamlit.components.v1 as components
+
+components.html(
+    """
+    <script>
+    const doc = window.parent.document;
+
+    function disableMobileKeyboard() {
+        // Target inputs inside Streamlit's BaseWeb select/multiselect containers
+        const inputs = doc.querySelectorAll('div[data-baseweb="select"] input');
+        inputs.forEach(input => {
+            if (input.inputMode !== 'none') {
+                input.inputMode = 'none';
+            }
+        });
+    }
+
+    // Run immediately and observe DOM changes (for dynamic/conditional widgets)
+    disableMobileKeyboard();
+    const observer = new MutationObserver(disableMobileKeyboard);
+    observer.observe(doc.body, { childList: true, subtree: true });
+    </script>
+    """,
+    height=0,
+    width=0,
+)

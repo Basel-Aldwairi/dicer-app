@@ -1,6 +1,6 @@
 import streamlit as st
 from games_db import load_db
-
+import streamlit.components.v1 as components
 
 
 st.set_page_config(page_title='Dicer-App', layout="centered")
@@ -20,8 +20,8 @@ if 'game_finished' not in st.session_state:
     st.session_state['game_finished'] = False
 if 'last_game' not in st.session_state:
     st.session_state['last_game'] = None
-if 'last_winner' not in st.session_state:
-    st.session_state['last_winner'] = None
+if 'last_winners' not in st.session_state:
+    st.session_state['last_winners'] = None
 
 st.title("Dicer-App")
 
@@ -61,11 +61,11 @@ if new_game_btn:
     st.session_state['last_game'] = None
 
 if st.session_state['game_started']:
-    st.session_state['last_winner'] = st.selectbox("Select Winner", st.session_state['selected_players'])
+    st.session_state['last_winners'] = st.multiselect("Select Winner", st.session_state['selected_players'])
 
     update_winner_button = st.button("Update Winner")
     if update_winner_button:
-        db.update_rounds_winner(st.session_state['round_id'], st.session_state['last_winner'])
+        db.update_rounds_info(st.session_state['round_id'], list(st.session_state['last_winners']))
         st.session_state['last_game'] = st.session_state['selected_game']
 
         st.session_state['game_started'] = False
@@ -76,4 +76,30 @@ if st.session_state['game_started']:
 
 
 if st.session_state['game_finished']:
-    st.success(f'Updated Winner of game "{st.session_state['last_game']}" with {st.session_state["last_winner"]}')
+    st.success(f'Updated Winner of game "{st.session_state['last_game']}" with {', '.join(st.session_state["last_winners"])}')
+
+
+components.html(
+    """
+    <script>
+    const doc = window.parent.document;
+
+    function disableMobileKeyboard() {
+        // Target inputs inside Streamlit's BaseWeb select/multiselect containers
+        const inputs = doc.querySelectorAll('div[data-baseweb="select"] input');
+        inputs.forEach(input => {
+            if (input.inputMode !== 'none') {
+                input.inputMode = 'none';
+            }
+        });
+    }
+
+    // Run immediately and observe DOM changes (for dynamic/conditional widgets)
+    disableMobileKeyboard();
+    const observer = new MutationObserver(disableMobileKeyboard);
+    observer.observe(doc.body, { childList: true, subtree: true });
+    </script>
+    """,
+    height=0,
+    width=0,
+)

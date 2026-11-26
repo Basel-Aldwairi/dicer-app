@@ -1,16 +1,19 @@
 import sqlite3
 import streamlit as st
-from pyparsing import results
-
+import datetime
 import sql_queries
 import pathlib
 
 
 
 class Database:
-    def __init__(self):
+    def __init__(self, testing =False):
 
-        file = pathlib.Path(__file__).parent.parent / 'data' / 'games.db'
+        db_file = 'games.db'
+        if testing:
+            db_file = 't_games.db'
+
+        file = pathlib.Path(__file__).parent.parent / 'data' / db_file
 
         self.connection = sqlite3.connect(file, check_same_thread=False)
         self.execute(sql_queries.PRAGMA_FOREIGN_KEY)
@@ -24,6 +27,7 @@ class Database:
         self.create_rounds_table()
         self.create_round_players_table()
         self.create_rounds_rolls_table()
+        self.create_round_winners_table()
 
         self.create_view_game_dice()
         self.create_view_rounds_winners()
@@ -35,6 +39,7 @@ class Database:
         self.drop_view_game_dice()
         self.drop_view_rounds_winners()
 
+        self.drop_round_winners_table()
         self.drop_rounds_rolls_table()
         self.drop_round_players_table()
         self.drop_rounds_table()
@@ -175,9 +180,14 @@ class Database:
         self.connection.commit()
 
 
-    def update_rounds_winner(self, round_id, winner_name):
-        winner_id = self.select_player_id(winner_name)
-        self.execute(sql_queries.UPDATE_ROUNDS_WINNER, (winner_id, round_id))
+    def update_rounds_info(self, round_id, winner_names):
+        self.insert_round_winners_list(round_id, winner_names)
+        date = datetime.datetime.now().date()
+        self.update_rounds_date(round_id, date)
+        self.connection.commit()
+
+    def update_rounds_date(self,round_id, date):
+        self.execute(sql_queries.UPDATE_ROUNDS_DATE, (date, round_id))
         self.connection.commit()
 
 
@@ -329,6 +339,38 @@ class Database:
         for row in results:
             print(row)
 
+
+    def create_round_winners_table(self):
+        self.execute(sql_queries.ROUNDS_WINNERS_CREATE_TABLE)
+        self.connection.commit()
+
+    def drop_round_winners_table(self):
+        self.execute(sql_queries.ROUNDS_WINNERS_DROP_TABLE)
+        self.connection.commit()
+
+    def insert_round_winners(self, round_id, winner_name):
+        winner_id = self.select_player_id(winner_name)
+        self.execute(sql_queries.ROUNDS_WINNERS_INSERT_VALUES, (round_id, winner_id))
+        self.connection.commit()
+
+    def insert_round_winners_list(self, round_id, winners_list):
+        for winner in winners_list:
+            self.insert_round_winners(round_id, winner)
+
+    def delete_round_winners(self, round_id, winner_name):
+        self.execute(sql_queries.ROUNDS_WINNERS_DELETE_VALUES, (round_id, winner_name))
+        self.connection.commit()
+
+    def select_all_round_winners(self):
+        results = self.execute(sql_queries.SELECT_ALL_ROUNDS_WINNERS)
+        return results
+
+    def print_round_winners(self):
+        results = self.select_all_round_winners()
+        for row in results:
+            print(row)
+
+
     def create_view_game_dice(self):
         self.execute(sql_queries.CREATE_VIEW_GAME_DICE)
         self.connection.commit()
@@ -364,4 +406,4 @@ class Database:
 
 @st.cache_resource
 def load_db() -> Database:
-    return Database()
+    return Database(testing=True)
